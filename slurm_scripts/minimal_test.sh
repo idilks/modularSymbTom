@@ -24,7 +24,8 @@ export HF_METRICS_CACHE="/dartfs/rc/lab/F/FranklandS/models/cache"
 export WANDB_API_KEY="bd1c08839d0c8c49e7c3efe9aabe2d9c644befb6"
 
 
-conda activate envs/tom_analysis
+cd /dartfs/rc/lab/F/FranklandS/tom
+conda activate /dartfs/rc/lab/F/FranklandS/tom/envs/tom_analysis
 cd codebase/tasks/identity_rules
 
 sample_size=4

@@ -125,7 +125,8 @@ class DefaultBehavioralConfig:
             context_types=['abstract'],
             prompt_variants=['standard', 'detailed']
         )
-        
+    
+    @staticmethod    
     def big_model_comparison() -> BehavioralConfig:
         """One full pass w llama 70B"""
         return BehavioralConfig(
@@ -135,6 +136,7 @@ class DefaultBehavioralConfig:
             temperatures=[0.1, 0.4, 0.7, 1.0, 1.3],
             samples_per_condition=10,
             vignette_types=['true_belief', 'false_belief'],
+            context_types=['abstract'],
             prompt_variants=['standard', 'detailed']
         )
             
