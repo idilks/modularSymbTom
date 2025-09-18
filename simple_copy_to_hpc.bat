@@ -43,6 +43,10 @@ robocopy "behavioral" "%DEST_DIR%\behavioral" /MIR /R:0 /NP /NDL /XD ".ipynb_che
 if %ERRORLEVEL% LEQ 3 echo behavioral folder synced successfully
 
 
+echo Copying slurm scripts...
+robocopy "slurm_scripts" "%DEST_DIR%\slurm_scripts" /MIR /R:0 /NP /NDL /XD ".ipynb_checkpoints" "__pycache__" "results" >nul 2>&1
+if %ERRORLEVEL% LEQ 3 echo slurm_scripts folder synced successfully
+
 
 echo Copying bat files...
 copy "*.bat" "%DEST_DIR%\" 2>nul
