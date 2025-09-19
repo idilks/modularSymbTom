@@ -87,7 +87,7 @@ def create_experiment_config(model_name: str, config: BehavioralConfig, **kwargs
     
     evaluation_config = EvaluationConfig(
         eval_metric='gen_acc',
-        low_prob_threshold=0.7
+        low_prob_threshold=0.6
     )
     
     return ExperimentConfig(
@@ -118,9 +118,9 @@ def get_args():
     # Experimental parameters
     parser.add_argument("--temperatures", nargs='+', type=float, default=None,
                        help="Temperatures to test")
-    parser.add_argument("--samples_per_condition", type=int, default=50,
+    parser.add_argument("--samples_per_condition", type=int, default=5,
                        help="Number of samples per experimental condition")
-    parser.add_argument("--prompt_num", type=int, default=50,
+    parser.add_argument("--prompt_num", type=int, default=20,
                        help="Number of prompts to generate")
     
     # Task settings
@@ -220,11 +220,13 @@ def run_model_evaluation(
     
     all_results = {}
     
-    # Calculate total for progress tracking (conditions, not condition×temperature)
+    # Calculate total for progress tracking (conditions × temperatures)
     total_conditions = (len(config.vignette_types) * len(config.tom_formats) * 
                        len(config.context_types) * len(config.prompt_variants))
+    total_evaluations = total_conditions * len(config.temperatures)
     
-    progress_bar = tqdm(total=total_conditions, desc=f"Evaluating {model_name}")
+    progress_bar = tqdm(total=total_evaluations, desc=f"Evaluating {model_name}")
+    condition_count = 0
     
     for vignette_type in config.vignette_types:
         for tom_format in config.tom_formats:
@@ -263,9 +265,19 @@ def run_model_evaluation(
                     prompt_generator = get_minimal_behavioral_generator(behavioral_config, tokenizer)
                     behavioral_prompts = prompt_generator.generate_prompts(config.prompt_num)
                     
+                    condition_count += 1
+                    condition_name = f"{vignette_type}_{tom_format}_{context_type}_{prompt_variant}"
+                    logger.info(f"Starting condition {condition_count}/{total_conditions}: {condition_name}")
+                    
                     # Run temperature sweep for this condition
-                    for temperature in config.temperatures:
+                    for temp_idx, temperature in enumerate(config.temperatures, 1):
                         condition_key = f"{vignette_type}_{tom_format}_{context_type}_{prompt_variant}_T{temperature}"
+                        
+                        # Update progress bar with detailed description
+                        progress_description = (f"{condition_name} | T={temperature} "
+                                              f"({temp_idx}/{len(config.temperatures)}) | "
+                                              f"{config.prompt_num} prompts × {config.samples_per_condition} samples")
+                        progress_bar.set_description(progress_description)
                         
                         # Evaluate all prompts for this temperature
                         condition_results = {
@@ -341,12 +353,16 @@ def run_model_evaluation(
                                 model_name,
                                 condition_info
                             )
+                        
+                        # Update progress after each temperature
+                        progress_bar.update(1)
+                        logger.info(f"Completed: {condition_name} T={temperature} "
+                                   f"({temp_idx}/{len(config.temperatures)})")
                     
                     # Finish wandb run for this condition
                     wandb_logger.finish_experiment()
                     
-                    progress_bar.update(1)
-                    logger.info(f"Completed condition: {vignette_type}_{tom_format}_{context_type}_{prompt_variant}")
+                    logger.info(f"Completed all temperatures for condition: {condition_name}")
     
     progress_bar.close()
     

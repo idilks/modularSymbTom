@@ -30,7 +30,7 @@ class BehavioralConfig:
     # Note: base_rules automatically derived from vignette_types (false_belief=ABA, true_belief=ABB)
     
     # Data settings
-    prompt_num: int = 50
+    prompt_num: int = 20
     tom_locations_file: str = "codebase/tom_datasets/locations.txt"
     
     # Logging settings
@@ -102,10 +102,10 @@ class DefaultBehavioralConfig:
     def quick_test() -> BehavioralConfig:
         """Fast configuration for testing."""
         return BehavioralConfig(
-            models=['Llama-3.1-8B-Instruct'],
-            temperatures=[1.0],
-            samples_per_condition=10,
-            vignette_types=['false_belief'],
+            models=['Llama-3.1-70B-Instruct'],
+            temperatures=[0.1, 0.4, 0.7, 1.0, 1.3],
+            samples_per_condition=5,
+            vignette_types=['false_belief', 'true_belief'],
             tom_formats=['direct'],
             context_types=['abstract'],
             prompt_variants=['detailed', 'standard']
@@ -119,11 +119,11 @@ class DefaultBehavioralConfig:
                 'Qwen2.5-14B-Instruct'
             ],
             temperatures=[0.1, 0.4, 0.7, 1.0, 1.3],
-            samples_per_condition=10,
+            samples_per_condition=5,
             vignette_types=['true_belief', 'false_belief'],
-            tom_formats=['direct', 'multiple_choice'],
+            tom_formats=['direct'],
             context_types=['abstract'],
-            prompt_variants=['standard', 'detailed']
+            prompt_variants=['detailed', 'standard']
         )
     
     @staticmethod    
@@ -134,7 +134,7 @@ class DefaultBehavioralConfig:
                 'Llama-3.1-70B-Instruct'
             ],
             temperatures=[0.1, 0.4, 0.7, 1.0, 1.3],
-            samples_per_condition=10,
+            samples_per_condition=5,
             vignette_types=['true_belief', 'false_belief'],
             context_types=['abstract'],
             prompt_variants=['standard', 'detailed']
@@ -147,9 +147,34 @@ class DefaultBehavioralConfig:
         return BehavioralConfig(
             models=[model_name],
             temperatures=[0.1, 0.4, 0.7, 1.0, 1.3],
-            samples_per_condition=10,
+            samples_per_condition=5,
             vignette_types=['false_belief', 'true_belief'],
             tom_formats=['direct'],
             context_types=['abstract'],
             prompt_variants=['standard', 'detailed']
+        )
+        
+    @staticmethod
+    def minimal_test_true() -> BehavioralConfig:
+        """Minimal configuration for quick debugging."""
+        return BehavioralConfig(
+            models=['Qwen2.5-14B-Instruct'],
+            temperatures=[0.1, 0.4, 0.7],
+            samples_per_condition=2,
+            vignette_types=['true_belief'],
+            tom_formats=['direct'],
+            context_types=['abstract'],
+            prompt_variants=['detailed']
+        )
+    @staticmethod
+    def minimal_test_false() -> BehavioralConfig:
+        """Minimal configuration for quick debugging."""
+        return BehavioralConfig(
+            models=['Qwen2.5-14B-Instruct'],
+            temperatures=[0.1, 0.4, 0.7],
+            samples_per_condition=2,
+            vignette_types=['false_belief'],
+            tom_formats=['direct'],
+            context_types=['abstract'],
+            prompt_variants=['detailed']
         )
