@@ -13,21 +13,31 @@ class BehavioralConfig:
     
     # Model settings
     models: List[str]
-    device_map: str = "cpu"     # Use CPU for environments without CUDA
-    device: str = "cpu"         # Target device for model and tensors  
+    device_map: str = "cuda"    # Use single CUDA device  
+    device: str = "cuda"        # Target device for model and tensors  
     n_devices: int = 1
+    load_in_8bit: bool = False  # Disabled: transformer_lens doesn't support quantization
+    load_in_4bit: bool = False
     
     # Experimental parameters
     temperatures: List[float] = None
     samples_per_condition: int = 10
-    max_new_tokens: int = 50
+    max_new_tokens: int = 20 # Limit output length for efficiency 
+    batch_size: int = 1  # Keep batch size small to avoid OOM
     
     # Task settings
     vignette_types: List[str] = None  # ['false_belief', 'true_belief']
     tom_formats: List[str] = None     # ['direct', 'multiple_choice']
-    prompt_variants: List[str] = None # ['standard', 'rephrased'] - for future token variants
+    prompt_variants: List[str] = None # ['standard', 'detailed'] 
     context_types: List[str] = None   # ['abstract'] - keep for compatibility with prompt generators
     # Note: base_rules automatically derived from vignette_types (false_belief=ABA, true_belief=ABB)
+    
+    # Question format settings
+    question_format: str = "single"     # "single" or "dual"
+    single_question_type: str = "belief"  # "belief", "world", or "mixed" (only used if question_format="single")
+    
+    # Template settings
+    template_names: List[str] = None  # specific templates: ["basic_object_move", "food_truck", "hair_styling", etc.]
     
     # Data settings
     prompt_num: int = 20
@@ -58,6 +68,9 @@ class BehavioralConfig:
             
         if self.context_types is None:
             self.context_types = ['abstract']  # Keep for prompt generator compatibility
+        
+        if self.template_names is None:
+            self.template_names = ['food_truck', 'hair_styling', 'library_book']
         
         # Create save directory
         os.makedirs(self.save_dir, exist_ok=True)
@@ -112,14 +125,29 @@ class DefaultBehavioralConfig:
         )
     
     @staticmethod
+    def single_question_test() -> BehavioralConfig:
+        """Test single question format."""
+        return BehavioralConfig(
+            models=['Qwen2.5-14B-Instruct'],
+            temperatures=[0.1],
+            samples_per_condition=3,
+            vignette_types=['false_belief', 'true_belief'],
+            tom_formats=['direct'],
+            context_types=['abstract'],
+            prompt_variants=['standard'],
+            question_format="single",
+            template_names=['food_truck', 'library_book', 'basic_object_move_detailed']
+        )
+    
+    @staticmethod
     def full_comparison() -> BehavioralConfig:
         """Full comparison between target models."""
         return BehavioralConfig(
             models=[
                 'Qwen2.5-14B-Instruct'
             ],
-            temperatures=[0.1, 0.4, 0.7, 1.0, 1.3],
-            samples_per_condition=5,
+            temperatures=[0.1, 0.4, 0.7],
+            samples_per_condition=1,
             vignette_types=['true_belief', 'false_belief'],
             tom_formats=['direct'],
             context_types=['abstract'],
@@ -133,8 +161,8 @@ class DefaultBehavioralConfig:
             models=[
                 'Llama-3.1-70B-Instruct'
             ],
-            temperatures=[0.1, 0.4, 0.7, 1.0, 1.3],
-            samples_per_condition=5,
+            temperatures=[0.1, 0.4, 0.7],
+            samples_per_condition=1,
             vignette_types=['true_belief', 'false_belief'],
             context_types=['abstract'],
             prompt_variants=['standard', 'detailed']
@@ -146,8 +174,8 @@ class DefaultBehavioralConfig:
         """Focus on temperature effects for single model."""
         return BehavioralConfig(
             models=[model_name],
-            temperatures=[0.1, 0.4, 0.7, 1.0, 1.3],
-            samples_per_condition=5,
+            temperatures=[0.1, 0.4, 0.7],
+            samples_per_condition=1,
             vignette_types=['false_belief', 'true_belief'],
             tom_formats=['direct'],
             context_types=['abstract'],
@@ -177,4 +205,18 @@ class DefaultBehavioralConfig:
             tom_formats=['direct'],
             context_types=['abstract'],
             prompt_variants=['detailed']
+        )
+    
+    @staticmethod
+    def wandb_test() -> BehavioralConfig:
+        """Minimal test specifically for wandb debugging with 1B model."""
+        return BehavioralConfig(
+            models=['Llama-3.2-1B'],
+            temperatures=[0.1, 0.4],
+            samples_per_condition=2,
+            vignette_types=['false_belief'],
+            tom_formats=['direct'],
+            context_types=['abstract'],
+            prompt_variants=['standard'],
+            prompt_num=3
         )

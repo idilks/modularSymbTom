@@ -7,22 +7,86 @@ import logging
 import torch
 import json
 import os
+import sys
 from typing import List, Dict, Tuple, Optional, Any
 from collections import defaultdict
 import numpy as np
 from datetime import datetime
 
-from codebase.tasks.identity_rules.prompt_generators.base import extract_dual_answers, normalize_loc
+from codebase.tasks.identity_rules.prompt_generators.base import extract_location_from_response, normalize_loc, locations_match
+
 from codebase.tasks.identity_rules.models import CustomHookedTransformer
 from behavioral_config import BehavioralConfig
 
 logger = logging.getLogger(__name__)
+
+def extract_single_answer_hybrid(response: str, question_type: str, loc1: str = None, loc2: str = None) -> str:
+    """Extract answer using new simplified parsing."""
+    return extract_location_from_response(response, loc1, loc2)
 
 class BehavioralEvaluator:
     """Handles pure behavioral evaluation without mechanistic analysis."""
     
     def __init__(self, config: BehavioralConfig):
         self.config = config
+    
+    def evaluate_response(self, response: str, prompt) -> Dict[str, Any]:
+        """Simple evaluation for new Prompt format with single question support."""
+        # Check if this is a single question prompt
+        question_type = getattr(prompt, 'question_type', 'dual')
+        if hasattr(prompt, 'metadata') and 'question_type' in prompt.metadata:
+            question_type = prompt.metadata['question_type']
+        
+        try:
+            if question_type == "belief":
+                # Only extract belief answer for belief questions
+                belief_answer = extract_single_answer_hybrid(response, "belief")
+                world_answer = None  # N/A
+                
+                belief_correct = normalize_loc(belief_answer) == normalize_loc(prompt.expected_belief)
+                world_correct = None  # N/A - don't count in accuracy
+                malformed = belief_answer == ""
+                
+            elif question_type == "world":
+                # Only extract world answer for world questions
+                belief_answer = None  # N/A
+                world_answer = extract_single_answer_hybrid(response, "world")
+                
+                belief_correct = None  # N/A - don't count in accuracy
+                world_correct = normalize_loc(world_answer) == normalize_loc(prompt.expected_world)
+                malformed = world_answer == ""
+                
+            else:  # dual question
+                # Extract both answers for dual questions
+                belief_answer, world_answer = extract_dual_answers(response)
+                belief_correct = normalize_loc(belief_answer) == normalize_loc(prompt.expected_belief)
+                world_correct = normalize_loc(world_answer) == normalize_loc(prompt.expected_world)
+                malformed = belief_answer == "" or world_answer == ""
+                
+        except Exception as e:
+            # Fallback on error
+            belief_answer = world_answer = ""
+            belief_correct = world_correct = False
+            malformed = True
+        
+        # Calculate overall correctness based on question type
+        if question_type == "belief":
+            correct = belief_correct
+        elif question_type == "world":
+            correct = world_correct
+        else:  # dual
+            correct = belief_correct and world_correct
+        
+        return {
+            'correct': correct,
+            'belief_correct': belief_correct,
+            'world_correct': world_correct,
+            'malformed': malformed,
+            'belief_answer': belief_answer,
+            'world_answer': world_answer,
+            'response': response,
+            'question_type': question_type
+        }
     
     def evaluate_model_response(
         self,
@@ -37,8 +101,9 @@ class BehavioralEvaluator:
         """Generate responses and evaluate accuracy for belief/world questions."""
         
         # Generate responses - ensure tensors are on model device
+        input_batch = input_ids.repeat(self.config.samples_per_condition, 1).to(model.cfg.device)
         generated_ids = model.generate(
-            input_ids.repeat(self.config.samples_per_condition, 1),
+            input_batch,
             max_new_tokens=self.config.max_new_tokens,
             temperature=temperature,
             do_sample=True if temperature > 0 else False,
@@ -59,7 +124,9 @@ class BehavioralEvaluator:
             
             # Clean up eos tokens
             for eos_token in [tokenizer.decode([eos_id]) for eos_id in eos_token_ids]:
+                # print the eos_token for debugging
                 if eos_token in gen_text:
+                    logger.debug(f"DEBUG: Found eos_token '{eos_token}' in gen_text, truncating")
                     gen_text = gen_text.split(eos_token)[0].strip()
                     break
             
@@ -182,6 +249,7 @@ class WandbLogger:
         try:
             import wandb
             self.wandb = wandb
+            logger.info(f"Wandb imported successfully, project: {self.config.wandb_project}")
             
             # Check if wandb project is configured (can be disabled with --no_wandb)
             if not self.config.wandb_project:
@@ -191,13 +259,28 @@ class WandbLogger:
             
             # Try to authenticate - wandb will automatically use WANDB_API_KEY if available
             try:
-                # Check if already logged in
-                if wandb.api.api_key:
-                    logger.info("Wandb already authenticated")
+                # Get API key from environment
+                api_key = os.environ.get("WANDB_API_KEY", "")
+                if not api_key:
+                    # Try from codebase utils
+                    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "codebase"))
+                    try:
+                        from utils import WANDB_API_KEY
+                        api_key = WANDB_API_KEY
+                    except ImportError:
+                        pass
+                
+                if api_key:
+                    wandb.login(key=api_key)
+                    logger.info("Wandb authentication successful with API key")
                 else:
-                    # This will use WANDB_API_KEY env var if available, or prompt if interactive
-                    wandb.login()
-                    logger.info("Wandb authentication successful")
+                    # Check if already logged in
+                    if wandb.api.api_key:
+                        logger.info("Wandb already authenticated")
+                    else:
+                        # This will prompt if interactive
+                        wandb.login()
+                        logger.info("Wandb authentication successful")
                     
             except Exception as auth_error:
                 logger.warning(f"Wandb authentication failed: {auth_error}")
@@ -211,19 +294,34 @@ class WandbLogger:
                        model_name: str, 
                        vignette_type: str,
                        tom_format: str, 
-                       context_type: str,
                        prompt_variant: str,
                        base_rule: str,
+                       template_name: str = "mixed",
+                       context_type: str = "abstract",  # Default, not used in behavioral eval
                        run_name: str = None):
         """Initialize a new wandb run for a specific experimental condition."""
         if not self.wandb:
+            logger.info("Wandb not available, skipping init_experiment")
             return
         
-        if run_name is None:
-            model_short = model_name.split('/')[-1].lower().replace('-', '_')
-            run_name = f"{model_short}_{vignette_type}_{tom_format}_{context_type}_{prompt_variant}"
+        logger.info(f"Initializing wandb experiment for {model_name}")
         
         model_info = self.config.get_model_info(model_name)
+        
+        if run_name is None:
+            # Clean model name: "meta-llama/Llama-3.1-7B-Instruct" -> "llama-7b"
+            model_clean = model_info['family'].lower() + '-' + model_info['size'].lower()
+            
+            # Clean template name: "basic_object_move" -> "basic-move" 
+            template_clean = template_name.replace('_', '-').replace('basic-object-move', 'basic-move')
+            
+            # Abbreviate vignette type: false_belief -> fb, true_belief -> tb
+            vignette_abbrev = vignette_type.replace('false_belief', 'fb').replace('true_belief', 'tb')
+            
+            # Question format: dual/belief/world
+            question_abbrev = self.config.question_format if hasattr(self.config, 'question_format') else 'dual'
+            
+            run_name = f"{model_clean}_{template_clean}_{vignette_abbrev}_{question_abbrev}"
         
         self.wandb.init(
             project=self.config.wandb_project,
@@ -242,6 +340,7 @@ class WandbLogger:
                 'context_type': context_type,
                 'prompt_variant': prompt_variant,
                 'base_rule': base_rule,
+                'template_name': template_name,
                 
                 # Experimental parameters
                 'temperatures': self.config.temperatures,
@@ -261,19 +360,34 @@ class WandbLogger:
                 vignette_type,
                 tom_format,
                 context_type,
+                template_name,
                 'behavioral_eval',
-                'theory_of_mind'
-            ]
+                'theory_of_mind',
+                f"question_format_{self.config.question_format}"
+            ] + ([f"single_type_{self.config.single_question_type}"] if self.config.question_format == "single" else [])
         )
     
     def log_condition_results(
         self,
         results: Dict[str, Any],
-        temperature: float
+        temperature: float,
+        prompt_response_pairs: List[Dict[str, Any]] = None
     ):
         """Log results for a specific temperature within the current run."""
         if not self.wandb:
+            logger.debug("Wandb not available, skipping log_condition_results")
             return
+        
+        # Additional check to ensure wandb is properly initialized
+        try:
+            if not hasattr(self.wandb, 'run') or self.wandb.run is None:
+                logger.warning("Wandb run not initialized, skipping log_condition_results")
+                return
+        except AttributeError:
+            logger.warning("Wandb run attribute error, skipping log_condition_results")
+            return
+        
+        logger.info(f"Logging results to wandb for temperature {temperature}")
         
         log_data = {
             # Core metrics  
@@ -296,10 +410,83 @@ class WandbLogger:
             'world_accuracy_std': results.get('world_accuracy_std', 0)
         }
         
+        # Create artifact with prompt-response pairs if provided
+        if prompt_response_pairs:
+            self._create_prompt_response_artifact(prompt_response_pairs, temperature)
+        
         # Use temperature as step value for meaningful x-axis in wandb plots
         # Scale by 100 to convert float to integer (e.g., 0.7 -> 70)
         temperature_step = int(temperature * 100)
         self.wandb.log(log_data, step=temperature_step)
+    
+    def _create_prompt_response_artifact(
+        self, 
+        prompt_response_pairs: List[Dict[str, Any]], 
+        temperature: float
+    ):
+        """Create wandb artifact with structured prompt-response data."""
+        if not self.wandb or not self.wandb.run:
+            return
+        
+        # Create artifact
+        artifact_name = f"prompt_responses_T{temperature:.1f}"
+        artifact = self.wandb.Artifact(
+            name=artifact_name,
+            type="prompt_response_data",
+            description=f"Prompt-response pairs for temperature {temperature}"
+        )
+        
+        # Extract run-level metadata from first pair (same for all in this run)
+        first_pair = prompt_response_pairs[0] if prompt_response_pairs else {}
+        run_metadata = {
+            'temperature': temperature,
+            'vignette_type': first_pair.get('vignette_type', ''),
+            'tom_format': first_pair.get('tom_format', ''),
+            'model_name': getattr(self.wandb.run.config, 'model_name', '') if self.wandb.run else '',
+            'total_prompts': len(prompt_response_pairs)
+        }
+        
+        # Create responses list without redundant metadata
+        responses = []
+        for pair in prompt_response_pairs:
+            response_details = pair.get('response_details', [{}])[0]  # Get first response
+            
+            response_entry = {
+                'prompt': pair.get('prompt_text', ''),
+                'expected_belief': pair.get('expected_belief', ''),
+                'expected_world': pair.get('expected_world', ''),
+                'cleaned_response': {
+                    'belief': response_details.get('belief_answer', ''),
+                    'world': response_details.get('world_answer', ''),
+                    'belief_correct': response_details.get('belief_correct', False),
+                    'world_correct': response_details.get('world_correct', False),
+                    'malformed': response_details.get('malformed', False)
+                },
+                'raw_response': response_details.get('response', '')
+            }
+            responses.append(response_entry)
+        
+        # Final structure
+        structured_data = {
+            'run_metadata': run_metadata,
+            'responses': responses
+        }
+        
+        # Save as JSON and add to artifact
+        import tempfile
+        import json
+        
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            json.dump(structured_data, f, indent=2)
+            temp_path = f.name
+        
+        artifact.add_file(temp_path, name=f"prompt_responses_T{temperature:.1f}.json")
+        
+        # Log artifact to wandb
+        self.wandb.log_artifact(artifact)
+        
+        # Clean up temp file
+        os.unlink(temp_path)
     
     def finish_experiment(self):
         """Finish the current wandb run."""

@@ -20,7 +20,7 @@ def create_experiment_config(model_name: str, prompt_variant: str = "standard") 
     )
     
     generation_config = GenerationConfig(
-        max_new_tokens=50,
+        max_new_tokens=70,
         temperature=0.7,
         do_sample=True
     )
