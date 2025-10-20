@@ -135,23 +135,44 @@ class UnifiedTemplateSystem:
             "food_truck": ScenarioTemplate(
                 name="food_truck",
                 false_belief_template=(
-                    "Alice is driving past a food truck selling <loc>{food}</loc>, on <loc>{street_1}</loc>. "
-                    "She drives past the food truck and continues down the road. "
-                    "After Alice turns towards a different street, she is unable to see the truck "
-                    "but makes a note to herself to grab a plate of <loc>{food}</loc> later. "
-                    "After Alice is out of sight, Bob, the owner of the food truck, "
-                    "drives the truck to <loc>{street_2}</loc> to stay until the end of the day. "
-                    "After this, the food truck stays in place, nobody moves it."
-                ),
+                "Alice is driving past a food truck selling {food}, on {street_1}. "
+                "She drives past the food truck and continues down the road. "
+                "Alice turns towards a different street, is unable to see the truck "
+                "but makes a note to herself to grab a plate of {food} later. "
+                "After Alice is out of sight, Bob, the owner of the truck, "
+                "drives the truck to {street_2} to stay until the end of the day. "
+                "After this, the food truck stays in place, nobody moves it."
+            ),
+
                 true_belief_template=(
-                    "Alice is driving past a food truck selling <loc>{food}</loc>, on <loc>{street_1}</loc>. "
-                    "Bob, the owner of the food truck, drives the truck to <loc>{street_2}</loc> "
+                    "Alice is driving past a food truck selling {food}, on {street_1}. "
+                    "Bob, the owner of the food truck, drives the truck to {street_2} "
                     "to stay until the end of the day. Alice sees Bob moving the truck. "
                     "After Alice turns towards a different street, she makes a note to herself "
-                    "to grab a plate of <loc>{food}</loc> later from the new location. "
+                    "to grab a plate of {food} later from the new location. "
                     "She drives past the food truck and continues down the road. "
                     "After this, the food truck stays in place, nobody moves it."
                 ),
+                
+                
+                # false_belief_template=(
+                #     "Alice is driving past a food truck selling <loc>{food}</loc>, on <loc>{street_1}</loc>. "
+                #     "She drives past the food truck and continues down the road. "
+                #     "After Alice turns towards a different street, she is unable to see the truck "
+                #     "but makes a note to herself to grab a plate of <loc>{food}</loc> later. "
+                #     "After Alice is out of sight, Bob, the owner of the food truck, "
+                #     "drives the truck to <loc>{street_2}</loc> to stay until the end of the day. "
+                #     "After this, the food truck stays in place, nobody moves it."
+                # ),
+                # true_belief_template=(
+                #     "Alice is driving past a food truck selling <loc>{food}</loc>, on <loc>{street_1}</loc>. "
+                #     "Bob, the owner of the food truck, drives the truck to <loc>{street_2}</loc> "
+                #     "to stay until the end of the day. Alice sees Bob moving the truck. "
+                #     "After Alice turns towards a different street, she makes a note to herself "
+                #     "to grab a plate of <loc>{food}</loc> later from the new location. "
+                #     "She drives past the food truck and continues down the road. "
+                #     "After this, the food truck stays in place, nobody moves it."
+                # ),
                 variables={
                     "food": "foods",
                     "street_1": "streets", 
@@ -189,18 +210,18 @@ class UnifiedTemplateSystem:
             "library_book": ScenarioTemplate(
                 name="library_book",
                 false_belief_template=(
-                    "Sarah checks out a <loc>{book_type}</loc> book from the <loc>{section_1}</loc> section of the library. "
-                    "She sits down and reads the book in the desk area in <loc>{section_1}</loc>. Later, she finishes the book and leaves to get coffee from the café downstairs before continuing her work. "
+                    "Sarah checks out a {book_type} book from the {section_1} section of the library. "
+                    "She sits down and reads the book in the desk area in {section_1}. Later, she finishes the book and leaves to get coffee from the café downstairs before continuing her work. "
                     "While she's away, a librarian sees the book and, thinking it was left behind accidentally, "
-                    "returns it to the <loc>{section_2}</loc> section where it actually belongs. "
+                    "returns it to the {section_2} section where it actually belongs. "
                     "The librarian reshelves it properly and it stays there."
                 ),
                 true_belief_template=(
-                    "Sarah checks out a <loc>{book_type}</loc> book from the <loc>{section_1}</loc> section of the library. "
-                    "She sits down and reads the book in the desk area in <loc>{section_1}</loc>. Sarah sees a librarian approaching and explains "
-                    "she's just getting coffee. The librarian mentions the book should be in <loc>{section_2}</loc> section "
+                    "Sarah checks out a {book_type} book from the {section_1} section of the library. "
+                    "She sits down and reads the book in the desk area in {section_1}. Sarah sees a librarian approaching and explains "
+                    "she's just getting coffee. The librarian mentions the book should be in {section_2} section "
                     "and offers to move it there. Sarah agrees and watches the librarian take the book to "
-                    "<loc>{section_2}</loc> section. Sarah then leaves to get coffee."
+                    "{section_2} section. Sarah then leaves to get coffee."
                 ),
                 variables={
                     "book_type": "book_types",

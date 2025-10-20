@@ -72,6 +72,7 @@ def run_single_evaluation(
     for prompt in tqdm(prompts, desc=f"Evaluating (temp={temperature})"):
         # Generate response
         input_ids = tokenizer(prompt.text, return_tensors="pt").input_ids.to(model.cfg.device)
+        # default that is given to the user? 
         
         with torch.no_grad():
             outputs = model.generate(

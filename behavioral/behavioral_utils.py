@@ -344,7 +344,7 @@ class WandbLogger:
                 
                 # Experimental parameters
                 'temperatures': self.config.temperatures,
-                'samples_per_condition': self.config.samples_per_condition,
+                '_conditionsamples_per': self.config.samples_per_condition,
                 'prompt_num': self.config.prompt_num,
                 'seed': self.config.seed,
                 'max_new_tokens': self.config.max_new_tokens,
