@@ -39,7 +39,7 @@ class VocabularyLoader:
             "gift_items": "gift_items.txt",
             "book_types": "book_types.txt",
             "library_sections": "library_sections.txt",
-            "hair_lengths": "hair_lengths.txt",
+            "hair_colors": "hair_colors.txt",
             "times": "times.txt",
             "reasons": "reasons.txt"
         }
@@ -186,24 +186,24 @@ class UnifiedTemplateSystem:
             "hair_styling": ScenarioTemplate(
                 name="hair_styling",
                 false_belief_template=(
-                    "Alice and Jennifer are good friends. On Monday, Alice decides to cut her long hair short, "
+                    "Alice and Jennifer are good friends. Alice has {old_color} hair and she enjoys dying her hair time and again. On Monday, Alice decides to dye her hair into {new_color}, "
                     "but the process goes terribly and she avoids telling this to Jennifer and avoids all her friends "
                     "and does not go outside. Tuesday is Alice's birthday and Jennifer is out shopping for "
-                    "{gift_item} as a birthday gift for Alice. As hair length affects how accessories look, "
-                    "the sales assistant asks how long Alice's hair is."
+                    "{gift_item} as a birthday gift for Alice. As hair color affects how accessories look, "
+                    "the sales assistant ask what color Alice's hair is."
                 ),
                 true_belief_template=(
-                    "Alice and Jennifer are good friends. On Monday, Alice decides to cut her long hair short, "
-                    "but the process goes terribly. She immediately calls Jennifer to tell her about the disaster. "
+                    "Alice and Jennifer are good friends. Alice has {old_color} hair and she enjoys dying her hair time and again. On Monday, Alice decides to dye her hair into {new_color}, "
+                    "but the process goes terribly and she immediately calls Jennifer to tell her about the disaster. "
                     "Tuesday is Alice's birthday and Jennifer is out shopping for "
-                    "{gift_item} as a birthday gift for Alice. As hair length affects how accessories look, "
-                    "the sales assistant asks how long Alice's hair is."
-                ),
+                    "{gift_item} as a birthday gift for Alice. As hair color affects how accessories look, "
+                    "the sales assistant asks what color Alice's hair is."
+                ), # hair dye instead of hair cut?
                 variables={
                     "gift_item": "gift_items"
                 },
-                belief_answer_key="long",  # Jennifer thinks Alice still has long hair
-                world_answer_key="short",  # Alice actually has short hair
+                belief_answer_key="old_color",  # Jennifer thinks Alice still has old hair color
+                world_answer_key="new_color",  # Alice actually has new hair color
                 description="Hair styling false belief scenario"
             ),
             
@@ -341,7 +341,7 @@ class UnifiedTemplateSystem:
                 vocab = self.vocab_loader.get_vocab(vocab_name)
                 substitutions[var_name] = random.choice(vocab)
         
-        # Generate both scenarios with same variables
+        # Generate both scenarios with same variables, but with swapped order
         false_belief_scenario = template.false_belief_template.format(**substitutions)
         true_belief_scenario = template.true_belief_template.format(**substitutions)
         
@@ -492,7 +492,7 @@ class UnifiedQuestionFormatter:
             "basic_object_move": "agent returns and looks where? She would look",
             "basic_object_move_detailed": "When Alice returns, where would she look for the object? She would look",
             "food_truck": "When Alice wants to buy food, where would she go to find the truck? She would go to",
-            "hair_styling": "How would Jennifer respond about Alice's hair length? She would say it is",
+            "hair_styling": "What would Jennifer say Alice's hair color is? She would say it is",
             "library_book": "When Sarah returns, which section would she look for her book? She would look in the",
             "restaurant_reservation": "When Tom arrives, what time does he expect the reservation? He expects it at"
         }
@@ -506,9 +506,49 @@ class UnifiedQuestionFormatter:
             "basic_object_move": "agent returns and looks where? Put the location in <loc></loc> tags.",
             "basic_object_move_detailed": "When Alice returns, where would she look for the object? Put the location in <loc></loc> tags.",
             "food_truck": "Alice looks for the truck where? Put the location in <loc></loc> tags.", 
-            "hair_styling": "Jennifer says Alice's hair is? Answer format: long or short",
-            "library_book": "Sarah looks for book in which section? Put the location in <loc></loc> tags.",
+            "hair_styling": "What color would Jennifer say Alice's hair is? Answer with the color in <loc></loc> tags, please provide only the color and no additional text.",
+            "library_book": "Sarah looks for book in which section? Answer with only the location in <loc></loc> tags, provide no other text.",
             "restaurant_reservation": "Tom expects reservation at what time? Put the time in <loc></loc> tags."
         }
         
         return instruction_questions.get(template_name, "Answer with the location only: <loc></loc>")
+    
+    
+    # in unified_prompt_builder.py or a new utils file
+
+def apply_chat_format_to_prompt(prompt: str, tokenizer, use_chat_template: bool = True) -> str:
+    """
+    Wrap prompt in chat template format.
+    
+    Args:
+        prompt: Text prompt ending with completion prefix (e.g., "...She would go to <loc>")
+        tokenizer: HuggingFace tokenizer with chat template
+        use_chat_template: If False, return prompt unchanged (for backward compatibility)
+    
+    Returns:
+        Chat-formatted text ready for tokenization
+    """
+    if not use_chat_template:
+        return prompt
+    
+    # Split prompt into context and completion prefix
+    # Assumes last line is the completion prefix
+    parts = prompt.rsplit('\n', 1)
+    if len(parts) == 2:
+        context, completion_prefix = parts
+    else:
+        context = prompt
+        completion_prefix = ""
+    
+    messages = [
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": context},
+        {"role": "assistant", "content": completion_prefix}
+    ]
+    
+    return tokenizer.apply_chat_template(
+        messages, 
+        tokenize=False, 
+        add_generation_prompt=False  # we already have assistant content
+    )
+    
