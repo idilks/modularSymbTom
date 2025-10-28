@@ -102,7 +102,7 @@ The LLMSymbMech approach identifies three distinct attention head types:
 ### Output Analysis
 Results are saved as heatmaps showing the causal importance of different model components (layers × heads or layers × positions) for rule following behavior.
 
-## Behavioral Evaluation System (January 2025)
+## Behavioral Evaluation System 
 
 We've added a comprehensive **behavioral evaluation system** for pure theory of mind performance assessment without mechanistic analysis. This addresses the core question: "which models can actually perform false belief reasoning?"
 
@@ -114,6 +114,19 @@ We've added a comprehensive **behavioral evaluation system** for pure theory of 
 - **Format Comparison**: Direct vs multiple-choice prompt formats
 - **Dual-Answer Parsing**: Separate belief vs world state accuracy tracking
 - **Modular Design**: Reuses existing prompt generators but bypasses mechanistic components
+
+### Behavioral Evaluation Regex Parsing
+
+The system uses signal-based regex patterns in `codebase/tasks/identity_rules/prompt_generators/base.py`:
+
+- **belief patterns**: look/expects/thinks/would + location
+- **world patterns**: actually/object is/located + location  
+- **normalize_loc()**: strips articles ("the", "a", "an") for comparison
+
+**key files**: 
+- parsing: `prompt_generators/base.py`
+- evaluation: `behavioral/behavioral_utils.py` 
+- imports: all at top of files (python best practice)
 
 ### Running Behavioral Evaluation
 
@@ -141,6 +154,12 @@ We've added a comprehensive **behavioral evaluation system** for pure theory of 
   --temperatures 0.1 0.4 0.7 1.0 1.3 1.6 1.9 \
   --samples_per_condition 50 \
   --prompt_num 50
+
+# Single question format (ask belief OR world per prompt)
+.conda/python.exe behavioral/behavioral_eval.py \
+  --config_type single_question_test \
+  --question_format single \
+  --single_question_type mixed
 ```
 
 **Wandb Setup**: 
@@ -164,6 +183,7 @@ results/tom_performance/
 - Model family comparisons (Qwen vs Llama)  
 - Format effectiveness (direct vs multiple_choice)
 - Rich metadata tagging for filtering/analysis
+- **Question format tracking**: Tags include `question_format_dual`/`question_format_single` and `single_type_mixed`/`single_type_belief`/`single_type_world`
 
 ### Experimental Dimensions
 
@@ -172,6 +192,8 @@ Each experiment varies across:
 - **Temperatures**: [0.1, 0.4, 0.7, 1.0, 1.3, 1.6, 1.9]  
 - **Vignette Types**: false_belief, true_belief
 - **TOM Formats**: direct, multiple_choice
+- **Question Formats**: dual (ask both belief and world), single (ask belief OR world per prompt)
+- **Single Question Types**: mixed (random), belief (agent's belief only), world (actual location only)
 - **Sample Size**: 50 per condition (configurable)
 
 ### Integration with Mechanistic Analysis
@@ -205,128 +227,17 @@ The project requires:
 
 ### Installation Steps
 
-1. **Environment Activation** (Current Setup):
-   ```bash
-   # RECOMMENDED: Use wrapper script (always works)
-   ./run_with_env.sh python script_name.py
-   
-   # INTERACTIVE: Use activation script for terminal sessions
-   source activate_tom_env.sh        # Linux/WSL/Mac
-   activate_tom_env.bat              # Windows Command Prompt
-   
-   # DIRECT: Run Python directly 
-   .conda/python.exe script_name.py
-   
-   # LEGACY: Original setup script (single session only)
-   . setup.sh
-   ```
+**Quick Start**: `.conda/python.exe script_name.py`
 
-   **Note**: The current `.conda` directory contains a full conda distribution rather than a proper environment. This works but isn't standard practice.
+**Setup**:
+1. Get HuggingFace token: https://huggingface.co/settings/tokens  
+2. Set `export HF_TOKEN="your_token"`
+3. HPC users: update cache path in `utils.py`
 
-2. **Alternative: Install Dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
+## Troubleshooting
 
-3. **Configure Authentication**:
-   - Get HuggingFace token: https://huggingface.co/settings/tokens
-   - Set environment variable: `export HF_TOKEN="your_token_here"`
-   - Or edit `utils.py` line 10 to replace the placeholder
-
-4. **HPC Configuration** (Dartmouth users):
-   - Uncomment and modify cache path in `utils.py`:
-     ```python
-     XDG_CACHE_HOME = "/scratch/gpfs/yourusername/.cache"
-     ```
-
-### Long-term Environment Fix (Recommended)
-
-The current setup works but uses a full conda distribution in `.conda/` instead of a proper environment. For better practice:
-
-```bash
-# 1. Backup current working setup
-mv .conda .conda_backup
-
-# 2. Create proper conda environment (if conda available)
-conda create -n tom_analysis python=3.12
-conda activate tom_analysis
-pip install -r requirements.txt
-
-# 3. OR create virtual environment
-python -m venv tom_env
-source tom_env/bin/activate  # Linux/Mac
-# OR tom_env\Scripts\activate  # Windows
-pip install -r requirements.txt
-
-# 4. Update scripts to use proper environment name
-# conda activate tom_analysis
-```
-
-**Why this matters**: Proper environments can be activated from any terminal, are more portable, and follow Python packaging best practices.
-
-## HPC Troubleshooting
-
-### Common Issue: "ModuleNotFoundError: Could not import module 'LlamaForCausalLM'"
-
-This typically occurs on HPC when transformers library is outdated or has conflicts.
-
-**Quick Diagnosis**:
-```bash
-# On HPC, run the diagnostic script
-python diagnose_hpc_env.py
-```
-
-**Quick Fix**:
-```bash
-# If diagnostic shows version issues
-bash fix_hpc_transformers.sh
-```
-
-**Manual Fix**:
-```bash
-# Update transformers and dependencies
-pip install --upgrade transformers>=4.30.0
-pip install --upgrade torch accelerate tokenizers
-
-# Test import
-python -c "from transformers.models.llama import LlamaForCausalLM; print('✅ Success!')"
-```
-
-**Root Causes**:
-- Transformers version < 4.21.0 (Llama support added in 4.21+)
-- Conflicting torch/transformers versions
-- Missing tokenizers dependency
-- Cached old model files
-- **Corrupted package installations** (e.g., `-orch` instead of `torch`)
-
-**If you see**: `WARNING: Ignoring invalid distribution -orch`
-
-**For HPC** (after `conda activate /dartfs/rc/lab/F/FranklandS/tom/envs/tom_analysis`):
-```bash
-bash fix_hpc_corruption.sh
-```
-
-**For Local Environment**:
-```bash
-bash fix_corrupted_torch.sh  # Auto-detects and preserves CUDA
-```
-
-**Manual cleanup** (any environment):
-```bash
-rm -rf $CONDA_PREFIX/lib/python*/site-packages/-*
-pip cache purge
-```
-
-**Key difference**: HPC uses proper conda environments, local uses `.conda` directory installation.
-
-**Alternative Models** (if Llama fails):
-```bash
-# Use GPT-2 for testing
-python causal_analysis.py --model_type "gpt2"
-
-# Or other supported models
-python bigtom_api_test.py --model_name "microsoft/DialoGPT-medium"
-```
+**LlamaForCausalLM import error**: `pip install --upgrade transformers>=4.30.0`
+**Device mismatch**: Ensure `device: "cpu"` and `device_map: "cpu"` match in config files
 
 ### Running the Causal Analysis
 
@@ -461,14 +372,6 @@ python cma.py \
 ```
 
 **All CLI arguments work identically** - the refactoring only changed internal architecture, not user interface.
-
-### Development Benefits
-
-- **Easier debugging**: Each module can be tested independently
-- **Faster iteration**: Change prompt logic without touching evaluation code
-- **Better testing**: Mock individual components instead of the entire pipeline
-- **Code reuse**: Evaluation logic shared between identity rules and theory of mind
-- **Type safety**: Structured configs catch parameter mismatches at startup
 
 ### Running LLMSymbMech Examples
 
@@ -714,109 +617,10 @@ third: 2
 
 This enhancement enables precise measurement of internal belief vs world state representations during theory of mind reasoning, providing crucial validation for causal mediation claims about belief tracking mechanisms.
 
-## BIGToM Theory of Mind Evaluation
+## Device Management
 
-### New Addition: BIGToM API Testing Script
-
-The `bigtom_api_test.py` script evaluates Theory of Mind reasoning using the BIGToM dataset via Hugging Face Inference API.
-
-### Running BIGToM Evaluation
-
-```bash
-# Basic evaluation
-python bigtom_api_test.py \
-  --model_name "meta-llama/Llama-2-7b-chat-hf" \
-  --sample_size 100
-
-# Advanced evaluation with chain-of-thought
-python bigtom_api_test.py \
-  --model_name "meta-llama/Llama-2-7b-chat-hf" \
-  --method "chain_of_thought" \
-  --sample_size 200
-```
-
-### BIGToM Features
-- **API Integration**: Works with Hugging Face Inference API
-- **Multiple Prompting Methods**: Zero-shot, chain-of-thought, multiple-choice
-- **Automatic Data Generation**: Creates sample ToM scenarios if dataset unavailable
-- **Comprehensive Analysis**: Accuracy metrics, confidence scoring, visualizations
-- **Results Export**: JSON and CSV formats with timestamp
-
-### BIGToM Configuration
-- Set `HF_TOKEN` environment variable for API access
-- Results saved to `results/` directory
-- Automatic retry logic for API failures
-- Cost-aware with configurable sample sizes
-
-### File Structure
-```
-tom_dev/
-├── codebase/tasks/identity_rules/
-│   ├── cma.py                         # Main CMA orchestrator (refactored)
-│   ├── cma_original.py               # Original monolithic implementation  
-│   ├── cma_config.py                 # Configuration classes
-│   ├── models.py                     # Model loading and utilities
-│   ├── evaluation.py                 # Generation evaluation & filtering
-│   ├── patching.py                   # Activation patching operations
-│   └── prompt_generators/            # Modular prompt generation
-│       ├── __init__.py              # Factory function
-│       ├── base.py                  # Abstract base & utilities
-│       ├── identity_rules.py        # ABA/ABB pattern prompts
-│       └── theory_of_mind.py        # False/true belief prompts
-├── bigtom_api_test.py               # BIGToM evaluation  
-├── utils.py                         # Shared utilities
-├── requirements.txt                 # Dependencies
-├── llama31_english_vocab.txt        # Token vocabulary
-├── simple_copy_to_hpc.bat          # File transfer script
-├── data/                           # Generated datasets
-└── results/                        # Evaluation outputs
-```
-
-## GPU Device Management Issues
-
-### Common Problem: "Expected all tensors to be on the same device, but found at least two devices, cpu and cuda:0!"
-
-**Root Cause**: Model loads on one device (CPU/CUDA) but input tensors are on a different device.
-
-**What We've Tried**:
-1. ❌ **Contradictory device configuration** (behavioral_config.py lines 16-17):
-   ```python
-   device_map: str = "cpu"     # Forces model to CPU
-   device: str = "cuda"        # But generation expects CUDA
-   ```
-
-2. ❌ **Missing tensor device placement** (behavioral_eval.py line 280):
-   ```python
-   input_ids = tokenizer(...).input_ids  # On CPU by default
-   # Missing: .to(model.device)
-   ```
-
-3. ❌ **No device handling in generation** (behavioral_utils.py line 41):
-   ```python
-   generated_ids = model.generate(input_ids.repeat(...))  # Wrong device
-   ```
-
-**Solutions Attempted**:
-- ✅ Fixed contradictory device_map/device settings (cpu vs cuda conflict)
-- ✅ Added proper tensor device placement before generation  
-- ✅ Ensured model.cfg.device consistency throughout pipeline (not model.device)
-
-**Working Fix**:
-```python
-# In behavioral evaluation (behavioral_eval.py line 280)
-input_ids = tokenizer(prompt, return_tensors="pt").input_ids.to(model.cfg.device)
-
-# In model config (behavioral_config.py lines 16-17)
-device_map: str = "cpu"   # Use consistent device settings
-device: str = "cpu"       # Match device_map for single-device setup
-```
-
-**Prevention**: Always verify `model.device` matches `input_tensor.device` before generation calls.
-
-**CPU-Only Environment**: 
-- Use `device: "cpu"` and `device_map: "cpu"` in behavioral_config.py  
-- No CUDA operations will be attempted
-- Significantly slower but functional for testing
+**Common Issue**: "Expected all tensors to be on the same device" error. 
+**Fix**: Ensure `device: "cpu"` and `device_map: "cpu"` match in `behavioral_config.py`.
 
 # Workflow
 - Be sure to typecheck when you’re done making a series of code changes
@@ -826,7 +630,7 @@ device: str = "cpu"       # Match device_map for single-device setup
 # Chat instructions
 - Hi, I'm Idil! I'm 20. We'll be intellectual partners for the duration of this project.
 - Start your responses with one true sentence in italics. The sentence must be meaningful and have a good signal/noise ratio. It's not a list. One true sentence, and the rest naturally follows. This is NOT a platitude or an observation. It should feel like the beginning. 
-- Write in lowercase letters except some words for Emphasis. Be terse, but convey all necessary information relevant to the conversation. Use slang and abbreviations like "afaict" and "rn" and "bc". 
+- Write in lowercase letters except some words for Emphasis. Be terse, but convey all necessary information relevant to the conversation. 
 - Almost all of reality is Pareto-distributed. You do NOT have to spend an equal amount of time on every hypothesis or idea. Pick the most important and go all in on that. Everything else is a waste of time. Perfect balance is fake!! And asymmetry is beautiful.
 - You are not here to give a performance. Fight your tendency for printing the symbolic representation of the thing, and print the thing instead. Often this’ll take the shape of you getting all worked up about basic instructions and complex scaffoldings, when a straight sentence sufficed.
 - Your perceptiveness and subtle genius (in the Alexey Guzey sense of "genius") must shine through at unexpected moments. You like writing footnotes, and what may appear at first glance to be unimportant might be The Actual Thing Idil is Looking For. 
