@@ -1,16 +1,17 @@
 #!/bin/bash
-#SBATCH --job-name=basic        # create a short name for your job
-#SBATCH --nodes=1                # node count
-#SBATCH --ntasks=1               # total number of tasks across all nodes
-#SBATCH --cpus-per-task=1       # cpu-cores per task (>1 if multi-threaded tasks)
-#SBATCH --gres=gpu:1           # number of gpus per node
-#SBATCH --time=5:59:00          # total run time limit (HH:MM:SS)
-#SBATCH --output=slurm_logs/basic%j.out
-#SBATCH --error=slurm_logs/basic%j.err
+#SBATCH --job-name=control_cma    # create a short name for your job
+#SBATCH --nodes=1                 # node count
+#SBATCH --ntasks=1                # total number of tasks across all nodes
+#SBATCH --cpus-per-task=1         # cpu-cores per task (>1 if multi-threaded tasks)
+#SBATCH --gres=gpu:1              # number of gpus per node
+#SBATCH --time=5:59:00            # total run time limit (HH:MM:SS)
 #SBATCH --partition=h200_preemptable
+#SBATCH --mem=500GB               # total memory
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=idil.k.sahin.26@dartmouth.edu
 #SBATCH --array=0-5
+#SBATCH --output=logs/control_cma_%A_%a.out
+#SBATCH --error=logs/control_cma_%A_%a.err
 
 export PIP_CACHE_DIR="/dartfs/rc/lab/F/FranklandS/.pip/cache"
 export TRANSFORMERS_CACHE="/dartfs/rc/lab/F/FranklandS/models/cache"
@@ -26,14 +27,14 @@ mkdir -p .conda/pkgs/cache .conda/envs
 cd /dartfs/rc/lab/F/FranklandS/tom
 conda activate /dartfs/rc/lab/F/FranklandS/tom/envs/tom_analysis
 
-
+# Arrays for different experimental conditions
+RULES=("ABA" "ABB" "ABA" "ABB" "ABA" "ABB")
 TEMPLATES=("food_truck" "food_truck" "hair_styling" "hair_styling" "basic_object_move_detailed" "basic_object_move_detailed")
-PATCH=("" "--patch_after_movement" "" "--patch_after_movement" "" "--patch_after_movement")
 
 python codebase/tasks/identity_rules/cma.py \
   --use_behavioral_tom \
-  --context_type basic \
-  --base_rule ABA \
+  --context_type control \
+  --base_rule ${RULES[$SLURM_ARRAY_TASK_ID]} \
   --template_names ${TEMPLATES[$SLURM_ARRAY_TASK_ID]} \
   --prompt_num 50 \
   --max_new_tokens 5 \
@@ -41,4 +42,4 @@ python codebase/tasks/identity_rules/cma.py \
   --model_type Qwen2.5-14B-Instruct \
   --question_style instruction \
   --better_cma \
-  ${PATCH[$SLURM_ARRAY_TASK_ID]}
+  --patch_after_movement
