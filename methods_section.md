@@ -1,0 +1,17 @@
+# Methods: Causal Mediation Analysis of Theory of Mind Mechanisms
+
+## Experimental Design
+
+We employed causal mediation analysis (CMA) to identify attention mechanisms responsible for theory of mind reasoning in transformer language models. Our approach systematically patches activations between minimal prompt pairs that isolate belief tracking from world state reasoning. The core manipulation involves four key parameters: `base_rule` determines whether false belief (ABA) or true belief (ABB) scenarios serve as the baseline condition; `context_type` controls the cognitive mechanism targeted by the minimal pair generation; `patch_after_movement` enables temporal precision by restricting interventions to post-movement activations; and `template_names` specifies which theory of mind scenarios to sample from our curated dataset.
+
+## Prompt Generation and Context Types
+
+The abstract context type generates minimal pairs that isolate belief tracking mechanisms: identical scenarios where only the timing of the agent's departure differs, creating false belief (agent misses object movement) versus true belief (agent witnesses movement) conditions. Control contexts serve as methodological negative controls, using identical scenario structures but swapping surface tokens (colors, locations) to validate that patching effects reflect genuine belief tracking rather than general computational disruption. Picture contexts test belief tracking when agents possess outdated visual evidence (photographs, receipts) that conflicts with current reality. Each template draws from curated vocabularies (food items, street names, hair colors) to generate diverse scenario instances while maintaining consistent logical structure.
+
+## Causal Intervention Methodology
+
+We perform head-level activation patching by systematically replacing attention head outputs from experimental prompts with corresponding activations from baseline prompts, then measuring changes in the model's belief attributions. The `patch_after_movement` parameter enables temporal control by detecting movement events through regex pattern matching and restricting interventions to subsequent token positions, isolating belief-relevant computations from general scene processing. For each attention head, we compute causal importance scores by comparing prediction accuracy before and after patching, identifying heads whose disruption systematically converts true belief reasoning to false belief reasoning or vice versa.
+
+## Evaluation and Statistical Analysis
+
+Model responses are evaluated using structured answer extraction that separately measures belief attribution accuracy (where the agent thinks the object is) and world state accuracy (where the object actually is). We filter analysis to prompts where the model correctly answers both baseline and experimental conditions without intervention, ensuring that measured effects reflect genuine causal contributions rather than model failures. Statistical significance is assessed through bootstrapping over multiple prompt samples, with effect sizes calculated as the magnitude of accuracy change following targeted head ablations. This methodology enables precise identification of computational mechanisms that specifically implement theory of mind reasoning versus general linguistic or factual processing.
