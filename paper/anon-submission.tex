@@ -1,0 +1,265 @@
+%File: anonymous-submission-latex-2026.tex
+\documentclass[letterpaper]{article} % DO NOT CHANGE THIS
+\usepackage[submission]{aaai2026}  % DO NOT CHANGE THIS
+\usepackage{times}  % DO NOT CHANGE THIS
+\usepackage{helvet}  % DO NOT CHANGE THIS
+\usepackage{courier}  % DO NOT CHANGE THIS
+\usepackage[hyphens]{url}  % DO NOT CHANGE THIS
+\usepackage{graphicx} % DO NOT CHANGE THIS
+\urlstyle{rm} % DO NOT CHANGE THIS
+\def\UrlFont{\rm}  % DO NOT CHANGE THIS
+\usepackage{natbib}  % DO NOT CHANGE THIS AND DO NOT ADD ANY OPTIONS TO IT
+\usepackage{caption} % DO NOT CHANGE THIS AND DO NOT ADD ANY OPTIONS TO IT
+\frenchspacing  % DO NOT CHANGE THIS
+\setlength{\pdfpagewidth}{8.5in} % DO NOT CHANGE THIS
+\setlength{\pdfpageheight}{11in} % DO NOT CHANGE THIS
+%
+% These are recommended to typeset algorithms but not required. See the subsubsection on algorithms. Remove them if you don't have algorithms in your paper.
+\usepackage{algorithm}
+\usepackage{algorithmic}
+
+%
+% These are are recommended to typeset listings but not required. See the subsubsection on listing. Remove this block if you don't have listings in your paper.
+\usepackage{newfloat}
+\usepackage{listings}
+\DeclareCaptionStyle{ruled}{labelfont=normalfont,labelsep=colon,strut=off} % DO NOT CHANGE THIS
+\lstset{%
+	basicstyle={\footnotesize\ttfamily},% footnotesize acceptable for monospace
+	numbers=left,numberstyle=\footnotesize,xleftmargin=2em,% show line numbers, remove this entire line if you don't want the numbers.
+	aboveskip=0pt,belowskip=0pt,%
+	showstringspaces=false,tabsize=2,breaklines=true}
+\floatstyle{ruled}
+\newfloat{listing}{tb}{lst}{}
+\floatname{listing}{Listing}
+%
+% Keep the \pdfinfo as shown here. There's no need
+% for you to add the /Title and /Author tags.
+\pdfinfo{
+/TemplateVersion (2026.1)
+}
+
+\usepackage{amsmath}
+% DISALLOWED PACKAGES
+% \usepackage{authblk} -- This package is specifically forbidden
+% \usepackage{balance} -- This package is specifically forbidden
+% \usepackage{color (if used in text)
+% \usepackage{CJK} -- This package is specifically forbidden
+% \usepackage{float} -- This package is specifically forbidden
+% \usepackage{flushend} -- This package is specifically forbidden
+% \usepackage{fontenc} -- This package is specifically forbidden
+% \usepackage{fullpage} -- This package is specifically forbidden
+% \usepackage{geometry} -- This package is specifically forbidden
+% \usepackage{grffile} -- This package is specifically forbidden
+% \usepackage{hyperref} -- This package is specifically forbidden
+% \usepackage{navigator} -- This package is specifically forbidden
+% (or any other package that embeds links such as navigator or hyperref)
+% \indentfirst} -- This package is specifically forbidden
+% \layout} -- This package is specifically forbidden
+% \multicol} -- This package is specifically forbidden
+% \nameref} -- This package is specifically forbidden
+% \usepackage{savetrees} -- This package is specifically forbidden
+% \usepackage{setspace} -- This package is specifically forbidden
+% \usepackage{stfloats} -- This package is specifically forbidden
+% \usepackage{tabu} -- This package is specifically forbidden
+% \usepackage{titlesec} -- This package is specifically forbidden
+% \usepackage{tocbibind} -- This package is specifically forbidden
+% \usepackage{ulem} -- This package is specifically forbidden
+% \usepackage{wrapfig} -- This package is specifically forbidden
+% DISALLOWED COMMANDS
+% \nocopyright -- Your paper will not be published if you use this command
+% \addtolength -- This command may not be used
+% \balance -- This command may not be used
+% \baselinestretch -- Your paper will not be published if you use this command
+% \clearpage -- No page breaks of any kind may be used for the final version of your paper
+% \columnsep -- This command may not be used
+% \newpage -- No page breaks of any kind may be used for the final version of your paper
+% \pagebreak -- No page breaks of any kind may be used for the final version of your paperr
+% \pagestyle -- This command may not be used
+% \tiny -- This is not an acceptable font size.
+% \vspace{- -- No negative value may be used in proximity of a caption, figure, table, section, subsection, subsubsection, or reference
+% \vskip{- -- No negative value may be used to alter spacing above or below a caption, figure, table, section, subsection, subsubsection, or reference
+
+\setcounter{secnumdepth}{0} %May be changed to 1 or 2 if section numbers are desired.
+
+% The file aaai2026.sty is the style file for AAAI Press
+% proceedings, working notes, and technical reports.
+%
+
+% Title
+
+% Your title must be in mixed case, not sentence case.
+% That means all verbs (including short verbs like be, is, using,and go),
+% nouns, adverbs, adjectives should be capitalized, including both words in hyphenated terms, while
+% articles, conjunctions, and prepositions are lower case unless they
+% directly follow a colon or long dash
+\title{A Mechanistic Investigation of Theory-of-Mind in a Large Language Model}
+\author{
+    %Authors
+    % All authors must be in the same font size and format.
+    Written by AAAI Press Staff\textsuperscript{\rm 1}\thanks{With help from the AAAI Publications Committee.}\\
+    AAAI Style Contributions by Pater Patel Schneider,
+    Sunil Issar,\\
+    J. Scott Penberthy,
+    George Ferguson,
+    Hans Guesgen,
+    Francisco Cruz\equalcontrib,
+    Marc Pujol-Gonzalez\equalcontrib
+}
+\affiliations{
+    %Afiliations
+    \textsuperscript{\rm 1}Association for the Advancement of Artificial Intelligence\\
+    % If you have multiple authors and multiple affiliations
+    % use superscripts in text and roman font to identify them.
+    % For example,
+
+    % Sunil Issar\textsuperscript{\rm 2},
+    % J. Scott Penberthy\textsuperscript{\rm 3},
+    % George Ferguson\textsuperscript{\rm 4},
+    % Hans Guesgen\textsuperscript{\rm 5}
+    % Note that the comma should be placed after the superscript
+
+    1101 Pennsylvania Ave, NW Suite 300\\
+    Washington, DC 20004 USA\\
+    % email address must be in roman text type, not monospace or sans serif
+    proceedings-questions@aaai.org
+%
+% See more examples next
+}
+
+%Example, Single Author, ->> remove \iffalse,\fi and place them surrounding AAAI title to use it
+\iffalse
+\title{My Publication Title --- Single Author}
+\author {
+    Author Name
+}
+\affiliations{
+    Affiliation\\
+    Affiliation Line 2\\
+    name@example.com
+}
+\fi
+
+\iffalse
+%Example, Multiple Authors, ->> remove \iffalse,\fi and place them surrounding AAAI title to use it
+\title{My Publication Title --- Multiple Authors}
+\author {
+    % Authors
+    First Author Name\textsuperscript{\rm 1},
+    Second Author Name\textsuperscript{\rm 2},
+    Third Author Name\textsuperscript{\rm 1}
+}
+\affiliations {
+    % Affiliations
+    \textsuperscript{\rm 1}Affiliation 1\\
+    \textsuperscript{\rm 2}Affiliation 2a\\
+    firstAuthor@affiliation1.com, secondAuthor@affilation2.com, thirdAuthor@affiliation1.com
+}
+\fi
+
+
+% REMOVE THIS: bibentry
+% This is only needed to show inline citations in the guidelines document. You should not need it and can safely delete it.
+\usepackage{bibentry}
+% END REMOVE bibentry
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+ Despite the successes of some LLMs in solving some many ToM problems, it remains unclear whether they do so in a way that resembles human computational strategies (i.e., whether LLMs acquire computational circuits dedicated to tracking the contents of belief). Here, we adopt recently developed tools for interpreting the internal mechanisms of LLMs to study how one specific model (Qwen 2.5-14B-Instruct) successfully solves Sally-Ann type false belief problems. Our preliminary results do not provide evidence for specific circuits dedicated to belief tracking in this network, but instead suggest the existence of attention heads that signal the truth/falsity of a belief, regardless of its content. The precise role of these circuits, and the way in which they interact with other mechanisms to support theory of mind in LLMs, remains under investigation.
+\end{abstract}
+
+\section{Introduction}
+Humans may possess dedicated neural circuits for theory of mind—neuroimaging consistently identifies the dorsal medial prefrontal cortex (dmPFC) and temporoparietal junction (TPJ) as core regions for mental state reasoning \citep{frith_neural_2006}, and single-neuron recordings reveal distinct populations in dmPFC that encode others' beliefs and distinguish them from self-beliefs \citep{jamaliSingleneuronalPredictionsOthers2021}. Large language models recently demonstrated significant performance on benchmarks such as BigToM \citep{shapiraCleverHansNeural2023}, ToMI \citep{le_revisiting_2019}, and FANToM \citep{kimFANToMBenchmarkStresstesting2023}, but whether they solve these tasks using ToM-like computational structures remains unknown.
+
+Recent mechanistic interpretability work has begun identifying potential computational structures underlying ToM reasoning. \citet{liBlackBoxesTransparent2025} used linear probing to identify attention heads correlating with perspective-taking, while \citet{prakashLanguageModelsUse2025} identified a lookback mechanism that retrieves state information in low-rank subspaces of the residual stream. However, \textbf{the precise computational structures giving rise to ToM ability remain unknown.} Here, we build on recent work on simple abstract rule induction that suggests that modular, interpretable mechanisms may exist in LLMs \citet{yang_emergent_2025}.
+\citeauthor{yang_emergent_2025} identify a particular type of attention head --  a "symbol abstraction head" -- that attends to positional patterns independent of token content (e.g., differentiating ABA/ABB rules), suggesting transformers learn relational encodings divorced from surface features. As theory of mind ability is believed to be strongly dependent on aspects of relational reasoning \citep{frith_neural_2006}, the application of Yang et al.'s approach to classic Theory of Mind problems presents a promising avenue of research for identifying causally relevant circuits. 
+
+We test three hypotheses about ToM subroutines at the attention head level: (1) mechanisms determining belief type (true vs. false) through relational encoding, (2) mechanisms tracking belief content independent of token retrieval, and (3) general state-tracking mechanisms distinct from belief-specific processing. We focus on scenarios with clear but implicit information access constraints.
+
+\section{Methods}
+We analyzed Qwen 2.5-14B-Instruct on three vignette types: food truck vendor location, hair color changes, and object relocation (Sally-Anne variant). Model accuracy ranged from 87.2\% to 96.5\% across conditions (Figure 2). We analyzed only trials where the model answered both baseline and counterfactual prompts correctly.
+
+We performed causal mediation analysis \citep{meng_locating_2023, yang_emergent_2025, wangInterpretabilityWildCircuit2022} by patching attention head outputs from one context into another to estimate causal effects of specific layers and heads.
+
+\subsubsection{Patching Procedure}
+We applied two temporal intervention points:
+\begin{enumerate}
+    \item \textbf{Belief formation:} Patching immediately after the state change that creates belief divergence (Figure 1)
+    \begin{figure}[h!]
+        \centering
+        \includegraphics[width=0.9\linewidth]{AnonymousSubmission//LaTeX/diagram.png}
+        \caption{Example of in-context patching}
+        \label{fig:placeholder}
+    \end{figure}
+    
+    \item \textbf{Answer generation:} Patching at the final token position, after the question and before model output.
+\end{enumerate}
+
+\subsubsection{Experimental Conditions}
+We tested three context types:
+\begin{enumerate}
+    \item \textbf{Belief type swap:} Patching between true and false belief scenarios with identical correct answers. Under the lookback hypothesis \citep{prakashLanguageModelsUse2025}, this should retrieve the alternative answer.
+    \item \textbf{Location swap:} Patching between same-belief-type scenarios with different correct answers.
+    \item \textbf{State-only control:} Patching scenarios describing only state changes without belief attribution, isolating general state-tracking from belief-specific mechanisms.
+\end{enumerate}
+
+A complete schematic appears in Appendix A.
+
+\subsubsection{Metrics}
+We calculated the causal mediation score from \citet{wangInterpretabilityWildCircuit2022}: 
+\[s = \left(f(c^*)[y^*] - f(c^*)[y]\right) - \left(f(c)[y^*] - f(c)[y]\right)\]
+where $c$ = original context, $c^*$ = patched context, $y$ = original correct answer, $y^*$ = expected answer after patching. Statistical significance was assessed via bootstrapping over 50 prompt pairs per run.
+
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width=0.7\linewidth]{AnonymousSubmission//LaTeX/accuracy-2.png}
+    \caption{Model accuracy across vignette types}
+    \label{fig:placeholder}
+\end{figure}
+
+\section{Results}
+
+Control conditions (same-belief-type patches and state-only scenarios) showed distributed, low-magnitude activation patterns across layers 36-39, heads 20-23 (Figure 3). These patterns were similar across vignette types, consistent with general content retrieval mechanisms operating regardless of belief attribution requirements.
+
+Cross-belief-type patching (true $\leftrightarrow$ false) revealed qualitatively different patterns: tighter clustering in layers 29-35, heads 30-34, with consistent overlap across vignettes (Figure 4). Notably, layer 29 heads 31-34, layer 32 heads 30-34, and layer 35 heads 30-33 showed significant activation when swapping between true and false belief scenarios, but not during within-belief-type patches. This dissociation suggests these heads may encode belief type (correspondence with reality) rather than belief content (what the agent's belief is about). The absence of such clustering in control conditions indicates this pattern is specific to scenarios requiring explicit true/false belief distinctions.
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width=1.0\linewidth]{AnonymousSubmission/LaTeX/control-cases.png}
+    \caption{Control conditions showing distributed, low-magnitude activations. A: Hair styling, false→false belief, answer generation patching. B: Food truck, state-only, answer generation patching. C: Object relocation, true→true belief, belief formation patching.}
+    \label{fig:placeholder}
+\end{figure}
+
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width=1.0\linewidth]{AnonymousSubmission/LaTeX/abstract-context.png}
+    \caption{Cross-belief-type patching showing consistent clustering in layers 29-35, heads 30-34. A: Hair styling, false→true belief. B: Food truck, true→false belief. C: Object relocation, true→false belief. All answer generation patching.}
+    \label{fig:placeholder}
+\end{figure}
+
+\section{Discussion}
+We found no evidence for attention heads tracking specific belief contents. However, our results identify attention heads that differentiate true from false beliefs independent of content. This pattern emerged consistently across scenarios but only when patching between different belief types.
+
+This aligns with work on symbol abstraction in transformers \citep{yang_emergent_2025}, where attention heads encode relational properties independent of token-level content. If these heads function as truth-value taggers, they may represent one component of a larger ToM system rather than a complete belief-tracking circuit.
+
+Alternative interpretations are possible: the heads might implement a heuristic that distinguishes "agent was present" from "agent was absent" scenarios without representing beliefs. We are currently working on discriminating between modular ToM components and behavioral shortcuts, through the false picture paradigm \citep{callejas_false_2011, saxe_people_2003} which dissociates false beliefs from false information.
+\subsubsection{Limitations}
+Our analysis focused on a single model with three scenario types. We examined attention head activations but did not trace complete information flow through the residual stream. How truth-value encoding (if present) combines with content retrieval to produce correct ToM responses remains unknown.
+
+\appendix
+\section{Appendix A}
+\label{sec:simplified context}
+Figure 5 shows our experimental design across the three condition types.
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width=1.0\linewidth]{prompting schematic.png}
+    \caption{Experimental conditions. Left: Cross-belief case patches between true and false beliefs with identical answers. Middle: Location swap patches within belief type with different answers. Right: State-only control removes belief attribution.}
+    \label{fig:placeholder}
+\end{figure}
+
+\nobibliography*
+
+\bibliography{AnonymousSubmission/LaTeX/tom-interp}
+
+\end{document}
